@@ -13,6 +13,10 @@
     "ecmaVersion": 2018
   },
   "rules": {
-    "semi": ["error", "never"]
+    "semi": ["error", "never"],
+    "no-underscore-dangle": "off",
+    "no-constant-condition": "off",
+    "no-await-in-loop": "off",
+    "new-cap": ["error", { "newIsCapExceptionPattern": "^ccxt" }]
   }
 }
