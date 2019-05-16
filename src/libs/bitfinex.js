@@ -27,7 +27,7 @@ class MarketError extends Error {
   }
 }
 
-const bitfinex = () => {
+module.exports = () => {
   const exchange = new ccxt.bitfinex2(exchangeConfig)
 
   const liveCandles = {}
@@ -58,10 +58,10 @@ const bitfinex = () => {
     }
   }
 
-  const _getTimeFrameByPass = (timeFrame, timestamp = 0) => {
-    const numericPart = timeFrame.match(/[0-9]+/g)
+  const _getTimeFrameByPass = (timeframe, timestamp = 0) => {
+    const numericPart = timeframe.match(/[0-9]+/g)
 
-    const aplhabeticPart = timeFrame.match(/^[0-9]+/g)
+    const aplhabeticPart = timeframe.match(/^[0-9]+/g)
 
     let milliseconds = 0
 
@@ -81,17 +81,17 @@ const bitfinex = () => {
     return timestamp + milliseconds * parseFloat(numericPart)
   }
 
-  const _getSymbolFormatted = (symbol) => {
+  const _getSymbolFormatted = symbol => {
     const symbolSanitized = symbol.slice(1)
     return `${symbolSanitized.replace(_quote, '')}/${_quote}`
   }
 
-  const _getOHLCV = async ({ symbol, timeFrame, timestamp }) => {
+  const _getOHLCV = async ({ symbol, timeframe, timestamp }) => {
     let ohlcvSanitized = []
     let startedTimestamp = timestamp
 
     while (true) {
-      const ohlcv = await exchange.fetchOHLCV(symbol, timeFrame, startedTimestamp, 1000)
+      const ohlcv = await exchange.fetchOHLCV(symbol, timeframe, startedTimestamp, 1000)
 
       await sleep(3000)
 
@@ -104,7 +104,7 @@ const bitfinex = () => {
         ohlcvSanitized = [...ohlcvSanitized, ...ohlcvMaped]
 
         startedTimestamp = _getTimeFrameByPass(
-          timeFrame,
+          timeframe,
           ohlcvSanitized[ohlcvSanitized.length - 1].timestamp,
         )
       } else break
@@ -116,7 +116,7 @@ const bitfinex = () => {
     await exchange.loadMarkets()
   }
 
-  const getTickers = async (pairs) => {
+  const getTickers = async pairs => {
     const tickers = await exchange.fetchTickers(pairs.map(pair => pair.symbol))
     return tickers
   }
@@ -142,7 +142,7 @@ const bitfinex = () => {
     let pairs = []
     try {
       _quote = quote
-      bases.forEach((base) => {
+      bases.forEach(base => {
         pairs = [...pairs, _createFormattedPair(base, quote)]
       })
     } catch (error) {
@@ -152,7 +152,7 @@ const bitfinex = () => {
     return pairs
   }
 
-  const getPairsByQuote = (quote) => {
+  const getPairsByQuote = quote => {
     let pairs = []
     try {
       const bases = _.filter(exchange.markets, market => market.quote === quote).map(m => m.base)
@@ -164,14 +164,14 @@ const bitfinex = () => {
     return pairs
   }
 
-  const getConsolidatedPrices = async ({ pairs, timeFrame, timestamp }) => {
+  const getConsolidatedPrices = async ({ pairs, timeframe, timestamp }) => {
     const pricesArray = await Promise.all(
-      pairs.map(async (pair) => {
+      pairs.map(async pair => {
         const { symbol } = pair
 
         const ohlcv = await _getOHLCV({
           symbol,
-          timeFrame,
+          timeframe,
           timestamp,
         })
 
@@ -184,7 +184,7 @@ const bitfinex = () => {
     return prices
   }
 
-  const resetPrice = (symbol) => {
+  const resetPrice = symbol => {
     liveCandles[symbol] = {
       o: undefined,
       h: undefined,
@@ -192,10 +192,11 @@ const bitfinex = () => {
       c: undefined,
     }
   }
-  const watchLivePrices = (pairs, timeFrame) => {
+  const watchLivePrices = pairs => {
     setInterval(async () => {
-      // console.log("Restarting websocket")
+      console.log('Restarting websocket of live prices watcher...')
       await ws.close()
+      console.log('Restarted...')
       ws.open()
     }, 2 * 60 * 60 * 1000)
 
@@ -214,19 +215,16 @@ const bitfinex = () => {
       liveCandles[symbol].h = Math.max(liveCandles[symbol].h, liveCandles[symbol].c)
     })
 
-    return new Promise(async (resolve) => {
+    return new Promise(async resolve => {
       ws.on('open', () => {
-        pairs.forEach((pair) => {
+        pairs.forEach(pair => {
           const { symbol, symbolSanitized } = pair
           resetPrice(symbol)
           ws.subscribeTicker(symbolSanitized)
         })
+        console.log('Live prices watcher started')
         resolve(true)
       })
-
-      await sleep(60000 - (Date.now() % 60000))
-
-      console.log(new Date())
 
       ws.open()
     })
@@ -251,5 +249,3 @@ const bitfinex = () => {
     getLivePrices,
   }
 }
-
-module.exports = bitfinex

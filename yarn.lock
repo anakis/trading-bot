@@ -696,7 +696,7 @@ bfx-api-node-util@^1.0.0, bfx-api-node-util@^1.0.1:
     bignumber.js "^6.0.0"
     copy "^0.3.2"
 
-"bfx-api-node-util@github:bitfinexcom/bfx-api-node-util":
+bfx-api-node-util@bitfinexcom/bfx-api-node-util:
   version "1.0.1"
   resolved "https://codeload.github.com/bitfinexcom/bfx-api-node-util/tar.gz/212ad4790292ee4b535fc8fb19d38f031cd54a53"
   dependencies:
@@ -942,6 +942,11 @@ concat-stream@^2.0.0:
     inherits "^2.0.3"
     readable-stream "^3.0.2"
     typedarray "^0.0.6"
+
+consign@^0.1.6:
+  version "0.1.6"
+  resolved "https://registry.yarnpkg.com/consign/-/consign-0.1.6.tgz#5a9b3a60ba5d362a514841b0c633e584486a72d7"
+  integrity sha512-Idlqa7N46rD6Odarx9qArbMpPrljc8DjV2DYH6uAFoOLITtuanhi2S/Z4LX4Jvg6+ef16Mjwwp5k5c5fMoOzIA==
 
 contains-path@^0.1.0:
   version "0.1.0"

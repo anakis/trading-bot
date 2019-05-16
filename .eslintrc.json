@@ -17,6 +17,8 @@
     "no-underscore-dangle": "off",
     "no-constant-condition": "off",
     "no-await-in-loop": "off",
-    "new-cap": ["error", { "newIsCapExceptionPattern": "^ccxt" }]
+    "new-cap": ["error", { "newIsCapExceptionPattern": "^ccxt" }],
+    "arrow-parens": ["error", "as-needed"],
+    "no-console":"off"
   }
 }
