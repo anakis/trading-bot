@@ -6,10 +6,15 @@
   "author": "Thiago <thiag.g3@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "start": "node src/index.js",
     "release": "standard-version"
   },
   "dependencies": {
+    "bitfinex-api-node": "^2.0.5",
+    "ccxt": "^1.18.509",
+    "consign": "^0.1.6",
     "dotenv": "^8.0.0",
+    "lodash": "^4.17.11",
     "sleep-promise": "^8.0.1"
   },
   "devDependencies": {

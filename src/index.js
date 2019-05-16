@@ -1,5 +1,3 @@
-require('dotenv').config()
+const app = require('./config/app')()
 
-const start = async () => {}
-
-start()
+app.module.orchestrator.run()
