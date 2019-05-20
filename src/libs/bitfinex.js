@@ -82,8 +82,8 @@ module.exports = () => {
   }
 
   const _getSymbolFormatted = symbol => {
-    const symbolSanitized = symbol.slice(1)
-    return `${symbolSanitized.replace(_quote, '')}/${_quote}`
+    const { symbol: symbolSanitized } = exchange.findMarket(symbol)
+    return symbolSanitized
   }
 
   const _getOHLCV = async ({ symbol, timeframe, timestamp }) => {
@@ -215,8 +215,12 @@ module.exports = () => {
       liveCandles[symbol].h = Math.max(liveCandles[symbol].h, liveCandles[symbol].c)
     })
 
+    ws.on('error', error => {
+      console.log('error', error)
+    })
+
     return new Promise(async resolve => {
-      ws.on('open', () => {
+      ws.once('open', () => {
         pairs.forEach(pair => {
           const { symbol, symbolSanitized } = pair
           resetPrice(symbol)
