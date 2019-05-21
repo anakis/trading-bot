@@ -9,7 +9,7 @@ module.exports = async app => {
     const [firstX, secondX] = x
     const [firstY, secondY] = y
 
-    const det = (secondY - firstY) - (secondX - firstX)
+    const det = secondY - firstY - (secondX - firstX)
     if (det === 0) return false
 
     const lambda = (secondY - firstY - (secondY - firstX)) / det
@@ -18,32 +18,32 @@ module.exports = async app => {
     return lambda > 0 && lambda < 1 && (gamma > 0 && gamma < 1)
   }
 
-  const crossover = (x, y) => {
-    let [firstX, secondX] = x
-    let [firstY, secondY] = y
+  // const crossover = (x, y) => {
+  //   let [firstX, secondX] = x
+  //   let [firstY, secondY] = y
 
-    secondX = secondX === undefined ? firstX : secondX
+  //   secondX = secondX === undefined ? firstX : secondX
 
-    secondY = secondY === undefined ? firstY : secondY
+  //   secondY = secondY === undefined ? firstY : secondY
 
-    return firstX < firstY && secondX > secondY
-  }
+  //   return firstX < firstY && secondX > secondY
+  // }
 
-  const crossunder = (x, y) => {
-    let [firstX, secondX] = x
-    let [firstY, secondY] = y
+  // const crossunder = (x, y) => {
+  //   let [firstX, secondX] = x
+  //   let [firstY, secondY] = y
 
-    secondX = secondX === undefined ? firstX : secondX
+  //   secondX = secondX === undefined ? firstX : secondX
 
-    secondY = secondY === undefined ? firstY : secondY
+  //   secondY = secondY === undefined ? firstY : secondY
 
-    return firstX > firstY && secondX < secondY
-  }
+  //   return firstX > firstY && secondX < secondY
+  // }
 
   const createIndicators = prices => {
     // o,h,l,c,v
     // 0,1,2,3,4
-    const [open, high, low, close, volume] = [0, 1, 2, 3, 4].map(i => prices.map(c => c.ohlcv[i]))
+    const [, high, low, close] = [0, 1, 2, 3, 4].map(i => prices.map(c => c.ohlcv[i]))
 
     const { rsiPeriod, stochasticPeriod, stochasticSignalPeriod } = app.config.constants
 
@@ -70,28 +70,18 @@ module.exports = async app => {
     } = createIndicators(prices)
 
     if (prevStoch && currentStoch) {
-      if (
-        !hasInvalidNumbers(
-          prevStoch.k,
-          currentStoch.k,
-          prevStoch.d,
-          currentStoch.d,
-          prevRSI,
-          currentRSI,
-        )
-      ) {
-        // intersect([10, 20], [22, 9])
+      const toTestInvalidNumbers = [
+        prevStoch.k,
+        currentStoch.k,
+        prevStoch.d,
+        currentStoch.d,
+        prevRSI,
+        currentRSI,
+      ]
+      if (!hasInvalidNumbers(toTestInvalidNumbers)) {
         if (intersect([prevStoch.k, currentStoch.k], [prevStoch.d, currentStoch.d])) {
-          if (
-            crossover([prevStoch.k, currentStoch.k], [prevStoch.d, currentStoch.d])
-            && currentStoch.k < 20
-            && currentRSI > 30
-          ) return 'LONG'
-          if (
-            crossunder([prevStoch.k, currentStoch.k], [prevStoch.d, currentStoch.d])
-            && currentStoch.k > 80
-            && currentRSI > 70
-          ) return 'SHORT'
+          if (currentStoch.k < 20 && prevRSI <= 30 && currentRSI > 30) return 'LONG'
+          if (currentStoch.k > 80 && prevRSI > 70 && currentRSI <= 70) return 'SHORT'
         }
       }
     }
