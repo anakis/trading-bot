@@ -1,3 +1,4 @@
+const _ = require('lodash')
 
 module.exports = async app => {
   const startExchange = async () => {
@@ -36,16 +37,27 @@ module.exports = async app => {
     }
   }
 
-  const getLivePrices = () => this.exchange.getLivePrices()
+  const getSanitizedLivePrice = candle => _.mapValues(candle, price => {
+    let ohlcv = []
+    if ((((price.o !== price.h) !== price.l) !== price.c) !== undefined) {
+      ohlcv = [price.o, price.h, price.l, price.c, 0]
+    } else {
+      console.log(price)
+    }
+    return {
+      ohlcv,
+      timestamp: new Date().setSeconds(0, 0),
+    }
+  })
+
+  const getLivePrices = () => getSanitizedLivePrice(this.exchange.getLivePrices())
 
   const init = async () => {
-    const { timeframe } = app.config.constants
-
     const exchange = await startExchange()
 
     const pairs = createPairs(exchange)
 
-    await exchange.watchLivePrices(pairs, timeframe)
+    await exchange.watchLivePrices(pairs)
 
     this.exchange = exchange
 
