@@ -193,12 +193,12 @@ module.exports = () => {
     }
   }
   const watchLivePrices = pairs => {
-    setInterval(async () => {
-      console.log('Restarting websocket of live prices watcher...')
-      await ws.close()
-      console.log('Restarted...')
-      ws.open()
-    }, 2 * 60 * 60 * 1000)
+    // setInterval(async () => {
+    //   console.log('Restarting websocket of live prices watcher...')
+    //   await ws.close()
+    //   console.log('Restarted...')
+    //   ws.open()
+    // }, 2 * 60 * 60 * 1000)
 
     ws.on('ticker', (pair, data) => {
       const symbol = _getSymbolFormatted(pair)
