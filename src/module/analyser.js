@@ -18,31 +18,7 @@ module.exports = async app => {
     return lambda > 0 && lambda < 1 && (gamma > 0 && gamma < 1)
   }
 
-  // const crossover = (x, y) => {
-  //   let [firstX, secondX] = x
-  //   let [firstY, secondY] = y
-
-  //   secondX = secondX === undefined ? firstX : secondX
-
-  //   secondY = secondY === undefined ? firstY : secondY
-
-  //   return firstX < firstY && secondX > secondY
-  // }
-
-  // const crossunder = (x, y) => {
-  //   let [firstX, secondX] = x
-  //   let [firstY, secondY] = y
-
-  //   secondX = secondX === undefined ? firstX : secondX
-
-  //   secondY = secondY === undefined ? firstY : secondY
-
-  //   return firstX > firstY && secondX < secondY
-  // }
-
   const createIndicators = prices => {
-    // o,h,l,c,v
-    // 0,1,2,3,4
     const [, high, low, close] = [0, 1, 2, 3, 4].map(i => prices.map(c => c.ohlcv[i]))
 
     const { rsiPeriod, stochasticPeriod, stochasticSignalPeriod } = app.config.constants
