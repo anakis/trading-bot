@@ -15,6 +15,7 @@ const wsConfig = {
   autoReconnect: true,
   seqAudit: true,
   packetWDDelay: 10 * 1000,
+  transform: true,
 }
 
 class MarketError extends Error {
@@ -31,8 +32,6 @@ module.exports = () => {
   const exchange = new ccxt.bitfinex2(exchangeConfig)
 
   const liveCandles = {}
-
-  let _quote = null
 
   const ws = new Api({
     ws: wsConfig,
@@ -141,7 +140,6 @@ module.exports = () => {
   const getFormattedPairs = ({ bases, quote }) => {
     let pairs = []
     try {
-      _quote = quote
       bases.forEach(base => {
         pairs = [...pairs, _createFormattedPair(base, quote)]
       })
@@ -192,29 +190,23 @@ module.exports = () => {
       c: undefined,
     }
   }
+
+  const updateLiveCandle = (data, { symbol }) => {
+    const key = _getSymbolFormatted(symbol)
+
+    const close = data.lastPrice
+
+    liveCandles[key].c = close
+
+    if (liveCandles[key].o === undefined) liveCandles[key].o = liveCandles[key].c
+    if (liveCandles[key].l === undefined) liveCandles[key].l = liveCandles[key].c
+    if (liveCandles[key].h === undefined) liveCandles[key].h = liveCandles[key].c
+
+    liveCandles[key].l = Math.min(liveCandles[key].l, liveCandles[key].c)
+    liveCandles[key].h = Math.max(liveCandles[key].h, liveCandles[key].c)
+  }
+
   const watchLivePrices = pairs => {
-    // setInterval(async () => {
-    //   console.log('Restarting websocket of live prices watcher...')
-    //   await ws.close()
-    //   console.log('Restarted...')
-    //   ws.open()
-    // }, 2 * 60 * 60 * 1000)
-
-    ws.on('ticker', (pair, data) => {
-      const symbol = _getSymbolFormatted(pair)
-
-      const close = data[6]
-
-      liveCandles[symbol].c = close
-
-      if (liveCandles[symbol].o === undefined) liveCandles[symbol].o = liveCandles[symbol].c
-      if (liveCandles[symbol].l === undefined) liveCandles[symbol].l = liveCandles[symbol].c
-      if (liveCandles[symbol].h === undefined) liveCandles[symbol].h = liveCandles[symbol].c
-
-      liveCandles[symbol].l = Math.min(liveCandles[symbol].l, liveCandles[symbol].c)
-      liveCandles[symbol].h = Math.max(liveCandles[symbol].h, liveCandles[symbol].c)
-    })
-
     ws.on('error', error => {
       console.log('error', error)
     })
@@ -225,6 +217,7 @@ module.exports = () => {
           const { symbol, symbolSanitized } = pair
           resetPrice(symbol)
           ws.subscribeTicker(symbolSanitized)
+          ws.onTicker({ symbol: symbolSanitized }, updateLiveCandle)
         })
         console.log('Live prices watcher started')
         resolve(true)
