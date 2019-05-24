@@ -21,7 +21,9 @@ module.exports = async app => {
   const createIndicators = prices => {
     const [, high, low, close] = [0, 1, 2, 3, 4].map(i => prices.map(c => c.ohlcv[i]))
 
-    const { rsiPeriod, stochasticPeriod, stochasticSignalPeriod } = app.config.constants
+    const {
+      rsiPeriod, stochasticPeriod, stochasticSignalPeriod, atrPeriod,
+    } = app.config.constants
 
     const [prevRSI, currentRSI] = indicators.RSI.calculate({
       period: rsiPeriod,
@@ -36,13 +38,25 @@ module.exports = async app => {
       low,
     }).splice(-2, 2)
 
-    return { rsi: { prevRSI, currentRSI }, stoch: { prevStoch, currentStoch } }
+    const atr = indicators.ATR.calculate({
+      period: atrPeriod,
+      close,
+      high,
+      low,
+    }).pop()
+
+    return {
+      rsi: { prevRSI, currentRSI },
+      stoch: { prevStoch, currentStoch },
+      atr,
+    }
   }
 
   const analyse = prices => {
     const {
       rsi: { prevRSI, currentRSI },
       stoch: { prevStoch, currentStoch },
+      atr,
     } = createIndicators(prices)
 
     if (prevStoch && currentStoch) {
@@ -56,12 +70,12 @@ module.exports = async app => {
       ]
       if (!hasInvalidNumbers(toTestInvalidNumbers)) {
         if (intersect([prevStoch.k, currentStoch.k], [prevStoch.d, currentStoch.d])) {
-          if (currentStoch.k < 20 && prevRSI <= 30 && currentRSI > 30) return 'LONG'
-          if (currentStoch.k > 80 && prevRSI > 70 && currentRSI <= 70) return 'SHORT'
+          if (currentStoch.k < 20 && prevRSI <= 30 && currentRSI > 30) return { action: 'LONG', atr }
+          if (currentStoch.k > 80 && prevRSI > 70 && currentRSI <= 70) return { action: 'SHORT', atr }
         }
       }
     }
-    return 'WAIT'
+    return { action: 'WAIT', atr }
   }
 
   const getAnalyse = () => {

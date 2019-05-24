@@ -12,6 +12,8 @@ const getStochasticPeriod = () => parseInt(process.env.STOCHASTIC_PERIOD, 10)
 
 const getStochasticSignalPeriod = () => parseInt(process.env.STOCHASTIC_SIGNAL_PERIOD, 10)
 
+const getATRperiod = () => parseInt(process.env.ATR_PERIOD, 10)
+
 module.exports = () => {
   const bases = getBases()
   const quote = getQuote()
@@ -19,6 +21,7 @@ module.exports = () => {
   const rsiPeriod = getRSIperiod()
   const stochasticPeriod = getStochasticPeriod()
   const stochasticSignalPeriod = getStochasticSignalPeriod()
+  const atrPeriod = getATRperiod()
 
   return {
     bases,
@@ -27,5 +30,6 @@ module.exports = () => {
     rsiPeriod,
     stochasticPeriod,
     stochasticSignalPeriod,
+    atrPeriod,
   }
 }

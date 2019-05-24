@@ -15,8 +15,8 @@ module.exports = app => ({
         const analyse = getAnalyse()
         // console.log(analyse)
         _.forEach(analyse, (a, symbol) => {
-          if (a.analyse !== 'WAIT') {
-            console.log(symbol, a.analyse, a.price)
+          if (a.analyse.action !== 'WAIT') {
+            console.log(symbol, a.analyse, a.price, a.analyse.atr)
           }
         })
         // console.log(result)
