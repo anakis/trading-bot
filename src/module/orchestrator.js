@@ -10,16 +10,14 @@ module.exports = app => ({
       res.end('Running...')
     })
     server.listen(process.env.PORT || 3000, async () => {
-      const { getAnalyse } = await app.module.analyser
+      const { getRisk } = await app.module.riskManager
       schedule.scheduleJob('* * * * *', () => {
-        const analyse = getAnalyse()
-        // console.log(analyse)
-        _.forEach(analyse, (a, symbol) => {
-          if (a.analyse.action !== 'WAIT') {
-            console.log(symbol, a.analyse, a.price, a.analyse.atr)
+        const risk = getRisk()
+        _.forEach(risk, (r, symbol) => {
+          if (r.action !== 'WAIT') {
+            console.log(symbol, r.action, 'at', r.price, 'stopLoss', r.stopLoss)
           }
         })
-        // console.log(result)
       })
     })
   },
