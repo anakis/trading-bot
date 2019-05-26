@@ -14,7 +14,7 @@ module.exports = async app => {
   }
 
   const getRisk = () => {
-    const risk = _.mapValues(this.analyse, ({ price, analyse: { action, atr } }) => calculateStopLoss({
+    const risk = _.mapValues(this.getAnalyse(), ({ price, analyse: { action, atr } }) => calculateStopLoss({
       price,
       action,
       atr,
@@ -24,7 +24,7 @@ module.exports = async app => {
 
   const init = async () => {
     const { getAnalyse } = await app.module.analyser
-    this.analyse = getAnalyse()
+    this.getAnalyse = getAnalyse
 
     return this
   }
