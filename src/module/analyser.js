@@ -3,7 +3,7 @@ const indicators = require('technicalindicators')
 const _ = require('lodash')
 
 module.exports = async app => {
-  const hasInvalidNumbers = (...list) => list.includes(NaN) || list.includes(undefined)
+  const hasInvalidNumbers = list => list.includes(NaN) || list.includes(undefined)
 
   const intersect = (x, y) => {
     const [firstX, secondX] = x
@@ -80,7 +80,13 @@ module.exports = async app => {
 
   const getAnalyse = () => {
     const livePrices = this.getLivePrices()
-    this.prices = _.mapValues(this.prices, (price, index) => [...price, livePrices[index]])
+    this.prices = _.mapValues(this.prices, (price, index) => {
+      // if got undefined from livePrices, don't update prices list
+      if (!hasInvalidNumbers(livePrices[index].ohlcv)) {
+        return [...price, livePrices[index]]
+      }
+      return [...price]
+    })
     const analyses = _.mapValues(this.prices, price => ({
       analyse: analyse(price),
       price: price[price.length - 1].ohlcv[3],
