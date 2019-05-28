@@ -6,20 +6,22 @@ module.exports = app => ({
   run: async () => {
     const server = new Express()
 
+    const signals = []
     server.get('/', (req, res) => {
-      res.end('Running...')
+      res.json(signals)
     })
     server.listen(process.env.PORT || 3000, async () => {
-      const { getAnalyse } = await app.module.analyser
+      const { getRisk } = await app.module.riskManager
       schedule.scheduleJob('* * * * *', () => {
-        const analyse = getAnalyse()
-        // console.log(analyse)
-        _.forEach(analyse, (a, symbol) => {
-          if (a.analyse !== 'WAIT') {
-            console.log(symbol, a.analyse, a.price)
+        const risk = getRisk()
+        _.forEach(risk, (r, symbol) => {
+          if (r.action !== 'WAIT') {
+            console.log(symbol, r.action, 'at', r.price, 'stopLoss', r.stopLoss)
+            signals.push({
+              symbol, action: r.action, price: r.price, stopLoss: r.stopLoss,
+            })
           }
         })
-        // console.log(result)
       })
     })
   },

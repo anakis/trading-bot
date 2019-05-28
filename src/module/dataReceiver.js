@@ -10,7 +10,7 @@ module.exports = async app => {
   }
 
   const createPairs = exchange => {
-    const { bases, quote } = app.config.constants
+    const { BASES: bases, QUOTE: quote } = app.config.constants
 
     return exchange.getFormattedPairs({ bases, quote })
   }
@@ -19,7 +19,7 @@ module.exports = async app => {
 
   const getPrices = async () => {
     try {
-      const { timeframe } = app.config.constants
+      const { TIMEFRAME: timeframe } = app.config.constants
 
       const { exchange, pairs } = this
 
@@ -38,12 +38,8 @@ module.exports = async app => {
   }
 
   const getSanitizedLivePrice = candle => _.mapValues(candle, price => {
-    let ohlcv = []
-    if ((((price.o !== price.h) !== price.l) !== price.c) !== undefined) {
-      ohlcv = [price.o, price.h, price.l, price.c, 0]
-    } else {
-      console.log(price)
-    }
+    const ohlcv = [price.o, price.h, price.l, price.c, 0]
+
     return {
       ohlcv,
       timestamp: new Date().setSeconds(0, 0),
