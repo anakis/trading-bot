@@ -1,23 +1,36 @@
 const _ = require('lodash')
 
 module.exports = async app => {
-  const calculateStopLoss = ({ price, action, atr }) => {
+  const calculateTradeRisk = (price, stopLoss) => 1 - Math.min(price, stopLoss) / Math.max(price, stopLoss)
+
+  const calculateStopLoss = ({ price, atr, action }) => {
     switch (action) {
       case 'LONG':
-        return { price, action, stopLoss: price - 2 * atr }
+        return price - 2 * atr
       case 'SHORT':
-        return { price, action, stopLoss: price + 2 * atr }
-      case 'WAIT':
       default:
-        return { price, action }
+        return price + 2 * atr
     }
   }
 
+  const calculateRisk = ({ price, action, atr }) => {
+    if (action !== 'WAIT') {
+      const stopLoss = calculateStopLoss({ price, atr, action })
+      const tradeRisk = calculateTradeRisk(price, stopLoss)
+      return { stopLoss, tradeRisk }
+    }
+    return {}
+  }
+
   const getRisk = () => {
-    const risk = _.mapValues(this.getAnalyse(), ({ price, analyse: { action, atr } }) => calculateStopLoss({
+    const risk = _.mapValues(this.getAnalyse(), ({ price, analyse: { action, atr } }) => ({
       price,
       action,
-      atr,
+      ...calculateRisk({
+        price,
+        atr,
+        action,
+      }),
     }))
     return risk
   }

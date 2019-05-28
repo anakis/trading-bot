@@ -22,24 +22,27 @@ module.exports = async app => {
     const [, high, low, close] = [0, 1, 2, 3, 4].map(i => prices.map(c => c.ohlcv[i]))
 
     const {
-      rsiPeriod, stochasticPeriod, stochasticSignalPeriod, atrPeriod,
+      RSI_PERIOD,
+      STOCHASTIC_PERIOD,
+      STOCHASTIC_SIGNAL_PERIOD,
+      ATR_PERIOD,
     } = app.config.constants
 
     const [prevRSI, currentRSI] = indicators.RSI.calculate({
-      period: rsiPeriod,
+      period: RSI_PERIOD,
       values: close,
     }).splice(-2, 2)
 
     const [prevStoch, currentStoch] = indicators.Stochastic.calculate({
-      period: stochasticPeriod,
-      signalPeriod: stochasticSignalPeriod,
+      period: STOCHASTIC_PERIOD,
+      signalPeriod: STOCHASTIC_SIGNAL_PERIOD,
       close,
       high,
       low,
     }).splice(-2, 2)
 
     const atr = indicators.ATR.calculate({
-      period: atrPeriod,
+      period: ATR_PERIOD,
       close,
       high,
       low,

@@ -10,7 +10,7 @@ module.exports = async app => {
   }
 
   const createPairs = exchange => {
-    const { bases, quote } = app.config.constants
+    const { BASES: bases, QUOTE: quote } = app.config.constants
 
     return exchange.getFormattedPairs({ bases, quote })
   }
@@ -19,7 +19,7 @@ module.exports = async app => {
 
   const getPrices = async () => {
     try {
-      const { timeframe } = app.config.constants
+      const { TIMEFRAME: timeframe } = app.config.constants
 
       const { exchange, pairs } = this
 
