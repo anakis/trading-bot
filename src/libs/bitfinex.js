@@ -28,8 +28,8 @@ class MarketError extends Error {
   }
 }
 
-module.exports = () => {
-  const exchange = new ccxt.bitfinex2(exchangeConfig)
+module.exports = () => credentials => {
+  const exchange = new ccxt.bitfinex2({ ...exchangeConfig, ...credentials })
 
   const liveCandles = {}
 
@@ -43,7 +43,7 @@ module.exports = () => {
     const symbol = `${base}/${quote}`
 
     try {
-      const { id: symbolSanitized, baseId: baseSanitized } = exchange.markets[symbol]
+      const { id: symbolSanitized, baseId: baseSanitized, limits } = exchange.markets[symbol]
 
       return {
         symbol,
@@ -51,6 +51,7 @@ module.exports = () => {
         base,
         baseSanitized,
         quote,
+        limits,
       }
     } catch (error) {
       throw new MarketError(`Symbol '${symbol}' not found`)
@@ -114,6 +115,8 @@ module.exports = () => {
   const loadMarket = async () => {
     await exchange.loadMarkets()
   }
+
+  const loadAccountBalance = () => exchange.fetchBalance()
 
   const getTickers = async pairs => {
     const tickers = await exchange.fetchTickers(pairs.map(pair => pair.symbol))
@@ -237,6 +240,7 @@ module.exports = () => {
 
   return {
     loadMarket,
+    loadAccountBalance,
     getTickers,
     getPairsWithBigVolume,
     getPairsByQuote,
