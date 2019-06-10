@@ -7,6 +7,7 @@ consign({ cwd: 'src' })
   .then('libs')
   .then('module/dataReceiver.js')
   .then('module/analyser.js')
+  .then('module/riskManager.js')
   .then('module')
   .into(app)
 
