@@ -14,12 +14,9 @@ module.exports = async app => {
   }
 
   const calculateRisk = ({ price, action, atr }) => {
-    if (action !== 'WAIT') {
-      const stopLoss = calculateStopLoss({ price, atr, action })
-      const tradeRisk = calculateTradeRisk(price, stopLoss)
-      return { stopLoss, tradeRisk }
-    }
-    return {}
+    const stopLoss = calculateStopLoss({ price, atr, action })
+    const tradeRisk = calculateTradeRisk(price, stopLoss)
+    return { stopLoss, tradeRisk }
   }
 
   const getRisk = () => {
