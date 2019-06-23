@@ -98,7 +98,7 @@ module.exports = async app => {
   }
 
   const init = async () => {
-    const { getPrices, getLivePrices } = await app.module.dataReceiver
+    const { getPrices, getLivePrices } = await app.module.dataGateway
     this.prices = await getPrices()
     this.getLivePrices = getLivePrices
     console.log('Starting analyse...')
