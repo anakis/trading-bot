@@ -3,14 +3,23 @@ const _ = require('lodash')
 module.exports = async app => {
   const calculateTradeRisk = (price, stopLoss) => 1 - Math.min(price, stopLoss) / Math.max(price, stopLoss)
 
+  const assertPrecision = (value, reference) => {
+    const precision = reference.toString().split('.')[1].length
+    return parseFloat(value.toFixed(precision))
+  }
+
   const calculateStopLoss = ({ price, atr, action }) => {
+    let stopLoss = 0
     switch (action) {
       case 'LONG':
-        return price - 2 * atr
-      case 'SHORT':
+        stopLoss = price - 2 * atr
+        break
+      case 'SORT':
       default:
-        return price + 2 * atr
+        stopLoss = price + 2 * atr
+        break
     }
+    return assertPrecision(stopLoss, price)
   }
 
   const calculateRisk = ({ price, action, atr }) => {
