@@ -29,7 +29,7 @@ class MarketError extends Error {
 }
 
 module.exports = () => credentials => {
-  const exchange = new ccxt.bitfinex2({ ...exchangeConfig, ...credentials })
+  const exchange = new ccxt.bitfinex({ ...exchangeConfig, ...credentials })
 
   const liveCandles = {}
 
@@ -47,7 +47,7 @@ module.exports = () => credentials => {
 
       return {
         symbol,
-        symbolSanitized,
+        symbolSanitized: `t${symbolSanitized}`,
         base,
         baseSanitized,
         quote,
@@ -82,7 +82,7 @@ module.exports = () => credentials => {
   }
 
   const _getSymbolFormatted = symbol => {
-    const { symbol: symbolSanitized } = exchange.findMarket(symbol)
+    const { symbol: symbolSanitized } = exchange.findMarket(symbol.slice(1))
     return symbolSanitized
   }
 
@@ -115,8 +115,6 @@ module.exports = () => credentials => {
   const loadMarket = async () => {
     await exchange.loadMarkets()
   }
-
-  const loadAccountBalance = () => exchange.fetchBalance()
 
   const getTickers = async pairs => {
     const tickers = await exchange.fetchTickers(pairs.map(pair => pair.symbol))
@@ -238,6 +236,14 @@ module.exports = () => credentials => {
     return live
   }
 
+  // Authenticated Methods
+
+  const loadAccountBalance = () => exchange.fetchBalance()
+
+  const createOrder = async ({
+    symbol, side, amount, price,
+  }) => exchange.createOrder(symbol, 'limit', side, amount, price)
+
   return {
     loadMarket,
     loadAccountBalance,
@@ -248,5 +254,6 @@ module.exports = () => credentials => {
     getConsolidatedPrices,
     watchLivePrices,
     getLivePrices,
+    createOrder,
   }
 }
