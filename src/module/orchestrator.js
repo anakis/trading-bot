@@ -16,12 +16,12 @@ module.exports = app => ({
     })
 
     server.listen(process.env.PORT || 3000, async () => {
-      const { calcPositionSize } = await app.module.positionManager
+      const { watch: traderWatch } = await app.module.trader
 
       const start = async () => {
-        const positionSize = await calcPositionSize()
-        if (_.size(positionSize)) {
-          _.forEach(positionSize, (p, symbol) => {
+        const tradeResult = await traderWatch()
+        if (_.size(tradeResult)) {
+          _.forEach(tradeResult, (p, symbol) => {
             console.log(
               symbol,
               p.action,

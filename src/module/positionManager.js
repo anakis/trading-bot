@@ -1,6 +1,6 @@
 const _ = require('lodash')
 
-module.exports = async app => {
+module.exports = app => {
   const calculateRiskPosition = ({
     tradeRisk, accountRisk, pairsSize, openedPositionSize,
   }) => {
@@ -26,74 +26,59 @@ module.exports = async app => {
     return KELLY_CRITERIETION_DEFAULT
   }
 
-  const calcPositionSize = async (profits = {}) => {
-    const risks = this.getRisk()
-    const opportunities = _.pickBy(risks, ({ action }) => action !== 'WAIT')
-    let positionSize = {}
-    if (_.size(opportunities) > 0) {
-      const { loadQuoteBalances, getPairs } = await app.module.dataReceiver
-      const { free: balance } = await loadQuoteBalances()
-      const pairs = getPairs()
-
-      positionSize = _.mapValues(opportunities, (opportunitie, index) => {
-        const {
-          tradeRisk, price, action, stopLoss,
-        } = opportunitie
-
-        const { RISK_COEFFICIENT: accountRisk } = app.config.constants
-
-        const kellyCriterietion = calculateKellyCriterietion(profits[index])
-
-        const riskPosition = calculateRiskPosition({
-          tradeRisk,
-          accountRisk,
-          pairsSize: _.size(risks),
-          openedPositionSize: _.size(this.positions),
-        })
-
-        const minAmount = pairs.find(pair => pair.symbol === index).limits.amount.min
-
-        const amount = Math.max(
-          minAmount,
-          (balance * Math.min(riskPosition, kellyCriterietion)) / price,
-        )
-
-        return {
-          price,
-          action,
-          amount,
-          stopLoss,
-        }
-      })
+  const filterOpportunities = ({ opportunities, balance, pairs }) => _.pickBy(opportunities, ({ action }, index) => {
+    if (action === 'SHORT') {
+      const pair = pairs.find(p => p.symbol === index)
+      return balance[pair.base] && balance[pair.base] >= pair.limits.amount.min
     }
+    return true
+  })
+
+  const calcPositionSize = async (opportunities, oppenedPositions, profits = {}) => {
+    let positionSize = {}
+    const { loadBalance, getPairs } = await app.module.dataGateway
+    const { QUOTE: quote } = app.config.constants
+    const balance = await loadBalance()
+    const pairs = getPairs()
+
+    const realOpportunities = filterOpportunities({ opportunities, balance, pairs })
+
+    positionSize = _.mapValues(realOpportunities, (opportunitie, index) => {
+      const {
+        tradeRisk, price, action, stopLoss,
+      } = opportunitie
+
+      const { RISK_COEFFICIENT: accountRisk } = app.config.constants
+
+      const kellyCriterietion = calculateKellyCriterietion(profits[index])
+
+      const riskPosition = calculateRiskPosition({
+        tradeRisk,
+        accountRisk,
+        pairsSize: pairs.length,
+        openedPositionSize: _.size(oppenedPositions),
+      })
+
+      const minAmount = pairs.find(pair => pair.symbol === index).limits.amount.min
+
+      const amount = Math.max(
+        minAmount,
+        (balance[quote] * Math.min(riskPosition, kellyCriterietion)) / price,
+      )
+
+      return {
+        price,
+        action,
+        amount,
+        stopLoss,
+      }
+    })
+
     return positionSize
   }
 
-  const managePositions = positions => {
-    const kept = _.omit(this.positions, Object.keys(positions))
-    const closed = _.pick(this.positions, Object.keys(positions))
-
-    this.positions = { ...kept, ...positions }
-    return {
-      kept,
-      closed,
-    }
-  }
-
-  const getPositions = () => this.positions
-
-  const init = async () => {
-    const { getRisk } = await app.module.riskManager
-    this.getRisk = getRisk
-    this.positions = {}
-    return this
-  }
-
-  await init()
 
   return {
     calcPositionSize,
-    managePositions,
-    getPositions,
   }
 }

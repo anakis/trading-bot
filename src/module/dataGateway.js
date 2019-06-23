@@ -49,23 +49,23 @@ module.exports = async app => {
 
   const getLivePrices = () => getSanitizedLivePrice(this.exchange.getLivePrices())
 
-  const _loadBalance = async () => this.exchange.loadAccountBalance()
-
-  const loadQuoteBalances = async () => {
-    const { QUOTE: quote } = app.config.constants
-    const funds = await _loadBalance()
-    return funds[quote]
-  }
-
-  const loadPositionBalance = async () => {
-    const { BASES: bases } = app.config.constants
-    const funds = await _loadBalance()
-    return _.pick(funds, bases)
+  const loadBalance = async () => {
+    const balance = await this.exchange.loadAccountBalance()
+    return balance.free
   }
 
   const getPairs = () => this.pairs
 
   const getPair = key => this.pairs.find(({ symbol }) => symbol === key)
+
+  const createOrder = async ({
+    symbol, side, amount, price,
+  }) => this.exchange.createOrder({
+    symbol,
+    side,
+    amount,
+    price,
+  })
 
   const init = async () => {
     const exchange = await startExchange()
@@ -87,8 +87,8 @@ module.exports = async app => {
     getPrices,
     getPairs,
     getPair,
-    loadQuoteBalances,
-    loadPositionBalance,
+    loadBalance,
     getLivePrices,
+    createOrder,
   }
 }
