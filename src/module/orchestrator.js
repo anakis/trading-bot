@@ -15,8 +15,15 @@ module.exports = async app => {
       res.json(signals)
     })
 
+    const oppenedOrders = {}
+
     const start = async () => {
       this.prices = this.getLivePrices() // get prices array
+      const lastPrices = _.mapValues(this.prices, price => price[price.length - 1])
+      const losses = this.getLosses(oppenedOrders, lastPrices) // get losses
+      if (_.size(losses) !== 0) {
+        await this.trade(losses)
+      }
       const analyse = this.getAnalyse(this.prices) // get analyse of each pair
       if (_.size(analyse) !== 0) {
         const risk = this.getRisk(analyse) // get risk of a analyse
@@ -30,8 +37,8 @@ module.exports = async app => {
             pairs,
             oppenedPositions: {},
           })
-          const oppenedOrders = await this.trade(opportunitiesWithPositionSize)
-          console.log(oppenedOrders)
+          const orders = await this.trade(opportunitiesWithPositionSize)
+          console.log(orders)
         }
       }
     }
@@ -46,12 +53,14 @@ module.exports = async app => {
     const { getAnalyse } = app.module.analyser
     const { getRisk } = app.module.riskManager
     const { getOpportunities } = app.module.opportunitiesMonitor
+    const { getLosses } = app.module.stopLossMonitor
     const { calcPositionSize } = app.module.positionManager
     const { trade } = await app.module.trader
     this.getLivePrices = getLivePrices
     this.getAnalyse = getAnalyse
     this.getRisk = getRisk
     this.getOpportunities = getOpportunities
+    this.getLosses = getLosses
     this.loadBalance = loadBalance
     this.calcPositionSize = calcPositionSize
     this.trade = trade
