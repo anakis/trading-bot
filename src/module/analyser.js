@@ -2,7 +2,7 @@ const indicators = require('technicalindicators')
 
 const _ = require('lodash')
 
-module.exports = async app => {
+module.exports = app => {
   const hasInvalidNumbers = list => list.includes(NaN) || list.includes(undefined)
 
   const intersect = (x, y) => {
@@ -81,32 +81,13 @@ module.exports = async app => {
     return { action: 'WAIT', atr }
   }
 
-  const getAnalyse = () => {
-    const livePrices = this.getLivePrices()
-    this.prices = _.mapValues(this.prices, (price, index) => {
-      // if got undefined from livePrices, don't update prices list
-      if (!hasInvalidNumbers(livePrices[index].ohlcv)) {
-        return [...price, livePrices[index]]
-      }
-      return [...price]
-    })
-    const analyses = _.mapValues(this.prices, price => ({
+  const getAnalyse = prices => {
+    const analyses = _.mapValues(prices, price => ({
       analyse: analyse(price),
       price: price[price.length - 1].ohlcv[3],
     }))
-    return analyses
+    return _.pickBy(analyses, ({ analyse: { action } }) => action !== 'WAIT')
   }
-
-  const init = async () => {
-    const { getPrices, getLivePrices } = await app.module.dataGateway
-    this.prices = await getPrices()
-    this.getLivePrices = getLivePrices
-    console.log('Starting analyse...')
-
-    return this
-  }
-
-  await init()
 
   return {
     getAnalyse,

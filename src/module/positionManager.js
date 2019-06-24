@@ -26,24 +26,14 @@ module.exports = app => {
     return KELLY_CRITERIETION_DEFAULT
   }
 
-  const filterOpportunities = ({ opportunities, balance, pairs }) => _.pickBy(opportunities, ({ action }, index) => {
-    if (action === 'SHORT') {
-      const pair = pairs.find(p => p.symbol === index)
-      return balance[pair.base] && balance[pair.base] >= pair.limits.amount.min
-    }
-    return true
-  })
-
-  const calcPositionSize = async (opportunities, oppenedPositions, profits = {}) => {
+  const calcPositionSize = ({
+    opportunities, balance, pairs, oppenedPositions, profits = {},
+  }) => {
     let positionSize = {}
-    const { loadBalance, getPairs } = await app.module.dataGateway
+
     const { QUOTE: quote } = app.config.constants
-    const balance = await loadBalance()
-    const pairs = getPairs()
 
-    const realOpportunities = filterOpportunities({ opportunities, balance, pairs })
-
-    positionSize = _.mapValues(realOpportunities, (opportunitie, index) => {
+    positionSize = _.mapValues(opportunities, (opportunitie, index) => {
       const {
         tradeRisk, price, action, stopLoss,
       } = opportunitie
@@ -59,7 +49,11 @@ module.exports = app => {
         openedPositionSize: _.size(oppenedPositions),
       })
 
-      const minAmount = pairs.find(pair => pair.symbol === index).limits.amount.min
+      let minAmount = 0
+      const pair = pairs.find(p => p.symbol === index)
+
+      if (action === 'LONG') minAmount = pair.limits.amount.min
+      else minAmount = balance[pair.base]
 
       const amount = Math.max(
         minAmount,
@@ -76,7 +70,6 @@ module.exports = app => {
 
     return positionSize
   }
-
 
   return {
     calcPositionSize,

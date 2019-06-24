@@ -1,14 +1,14 @@
 const _ = require('lodash')
 
-module.exports = async app => {
-  const calculateTradeRisk = (price, stopLoss) => 1 - Math.min(price, stopLoss) / Math.max(price, stopLoss)
+module.exports = () => {
+  const getTradeRisk = (price, stopLoss) => 1 - Math.min(price, stopLoss) / Math.max(price, stopLoss)
 
   const assertPrecision = (value, reference) => {
     const precision = reference.toString().split('.')[1].length
     return parseFloat(value.toFixed(precision))
   }
 
-  const calculateStopLoss = ({ price, atr, action }) => {
+  const getStopLoss = ({ price, atr, action }) => {
     let stopLoss = 0
     switch (action) {
       case 'LONG':
@@ -23,13 +23,13 @@ module.exports = async app => {
   }
 
   const calculateRisk = ({ price, action, atr }) => {
-    const stopLoss = calculateStopLoss({ price, atr, action })
-    const tradeRisk = calculateTradeRisk(price, stopLoss)
+    const stopLoss = getStopLoss({ price, atr, action })
+    const tradeRisk = getTradeRisk(price, stopLoss)
     return { stopLoss, tradeRisk }
   }
 
-  const getRisk = () => {
-    const risk = _.mapValues(this.getAnalyse(), ({ price, analyse: { action, atr } }) => ({
+  const getRisk = analyse => {
+    const risk = _.mapValues(analyse, ({ price, analyse: { action, atr } }) => ({
       price,
       action,
       ...calculateRisk({
@@ -40,15 +40,6 @@ module.exports = async app => {
     }))
     return risk
   }
-
-  const init = async () => {
-    const { getAnalyse } = await app.module.analyser
-    this.getAnalyse = getAnalyse
-
-    return this
-  }
-
-  await init()
 
   return {
     getRisk,

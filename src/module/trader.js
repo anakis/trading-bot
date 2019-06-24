@@ -14,49 +14,34 @@ module.exports = async app => {
     return ''
   }
 
-  const watch = async () => {
-    const opportunities = await findOpportunities()
+  const trade = async opportunities => Promise.all(
+    _.map(opportunities, async (opportunitie, symbol) => {
+      const { amount, price, action } = opportunitie
 
-    if (hasOpportunities(opportunities)) {
-      const opportunitiesWithPositionSize = await this.calcPositionSize(opportunities, {})
+      const side = getTradeSide(action)
 
-      const opennedOrders = await Promise.all(
-        _.map(opportunitiesWithPositionSize, async (opportunitie, symbol) => {
-          const { amount, price, action } = opportunitie
-
-          const side = getTradeSide(action)
-
-          try {
-            const order = await this.createOrder({
-              symbol,
-              side,
-              amount,
-              price,
-            })
-            return order
-          } catch (e) {
-            return e
-          }
-        }),
-      )
-
-      return opennedOrders
-    }
-    return {}
-  }
+      try {
+        const order = await this.createOrder({
+          symbol,
+          side,
+          amount,
+          price,
+        })
+        return order
+      } catch (e) {
+        return e
+      }
+    }),
+  )
 
   const init = async () => {
-    const { getRisk } = await app.module.riskManager
     const { createOrder } = await app.module.dataGateway
-    const { calcPositionSize } = app.module.positionManager
-    this.getRisk = getRisk
     this.createOrder = createOrder
-    this.calcPositionSize = calcPositionSize
     return this
   }
   await init()
 
   return {
-    watch,
+    trade,
   }
 }

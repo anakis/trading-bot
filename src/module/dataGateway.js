@@ -47,7 +47,19 @@ module.exports = async app => {
     }
   })
 
-  const getLivePrices = () => getSanitizedLivePrice(this.exchange.getLivePrices())
+  const hasInvalidNumbers = list => list.includes(NaN) || list.includes(undefined)
+
+  const getLivePrices = () => {
+    const livePrices = getSanitizedLivePrice(this.exchange.getLivePrices())
+    this.prices = _.mapValues(this.prices, (price, index) => {
+      // if got undefined from livePrices, don't update prices list
+      if (!hasInvalidNumbers(livePrices[index].ohlcv)) {
+        return [...price, livePrices[index]]
+      }
+      return [...price]
+    })
+    return this.prices
+  }
 
   const loadBalance = async () => {
     const balance = await this.exchange.loadAccountBalance()
@@ -78,13 +90,14 @@ module.exports = async app => {
 
     this.pairs = pairs
 
+    this.prices = await getPrices()
+
     return this
   }
 
   await init()
 
   return {
-    getPrices,
     getPairs,
     getPair,
     loadBalance,
