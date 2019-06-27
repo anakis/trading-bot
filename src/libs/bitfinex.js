@@ -240,9 +240,17 @@ module.exports = () => credentials => {
 
   const loadAccountBalance = () => exchange.fetchBalance()
 
-  const createOrder = async ({
+  const createLimitOrder = async ({
     symbol, side, amount, price,
   }) => exchange.createOrder(symbol, 'limit', side, amount, price)
+
+  const createStopOrder = async ({
+    symbol, side, amount, price,
+  }) => exchange.createOrder(symbol, 'exchange stop', side, amount, price)
+
+  const getOpenOrders = async () => exchange.fetchOpenOrders()
+
+  const removeOrder = async id => exchange.cancelOrder(id)
 
   return {
     loadMarket,
@@ -254,6 +262,9 @@ module.exports = () => credentials => {
     getConsolidatedPrices,
     watchLivePrices,
     getLivePrices,
-    createOrder,
+    getOpenOrders,
+    createLimitOrder,
+    createStopOrder,
+    removeOrder,
   }
 }

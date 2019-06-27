@@ -72,12 +72,34 @@ module.exports = async app => {
 
   const createOrder = async ({
     symbol, side, amount, price,
-  }) => this.exchange.createOrder({
+  }) => this.exchange.createLimitOrder({
     symbol,
     side,
     amount,
     price,
   })
+
+  const createStopLoss = async ({
+    symbol, amount, side, price,
+  }) => this.exchange.createStopOrder({
+    symbol,
+    side: side === 'sell' ? 'buy' : 'sell',
+    amount,
+    price,
+  })
+
+  const getOpenOrders = async () => {
+    const orders = await this.exchange.getOpenOrders()
+    return _.keyBy(orders, 'symbol')
+  }
+
+  const removeOrder = async id => {
+    try {
+      return this.exchange.removeOrder(id)
+    } catch (e) {
+      return removeOrder(id)
+    }
+  }
 
   const init = async () => {
     const exchange = await startExchange()
@@ -103,5 +125,8 @@ module.exports = async app => {
     loadBalance,
     getLivePrices,
     createOrder,
+    createStopLoss,
+    getOpenOrders,
+    removeOrder,
   }
 }
