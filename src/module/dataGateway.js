@@ -71,13 +71,25 @@ module.exports = async app => {
   const getPair = key => this.pairs.find(({ symbol }) => symbol === key)
 
   const createOrder = async ({
-    symbol, side, amount, price,
-  }) => this.exchange.createLimitOrder({
-    symbol,
-    side,
-    amount,
-    price,
-  })
+    symbol, side, amount, price, stopOrder = undefined,
+  }) => {
+    if (stopOrder) {
+      this.exchange.createOCOLimitOrder({
+        symbol,
+        side,
+        amount,
+        price,
+        stopLoss: stopOrder.price,
+      })
+    } else {
+      this.exchange.createLimitOrder({
+        symbol,
+        side,
+        amount,
+        price,
+      })
+    }
+  }
 
   const createStopLoss = async ({
     symbol, amount, side, price,
@@ -90,7 +102,7 @@ module.exports = async app => {
 
   const getOpenOrders = async () => {
     const orders = await this.exchange.getOpenOrders()
-    return _.keyBy(orders, 'symbol')
+    return _.groupBy(orders, 'symbol', 'type')
   }
 
   const removeOrder = async id => {

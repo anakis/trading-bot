@@ -240,6 +240,14 @@ module.exports = () => credentials => {
 
   const loadAccountBalance = () => exchange.fetchBalance()
 
+  const createOCOLimitOrder = async ({
+    symbol, side, amount, price, stopLoss,
+  }) => exchange.createOrder(symbol, 'limit', side, amount, price, {
+    ocoorder: true,
+    sell_price_oco: exchange.amountToPrecision(symbol, stopLoss),
+    buy_price_oco: exchange.amountToPrecision(symbol, stopLoss),
+  })
+
   const createLimitOrder = async ({
     symbol, side, amount, price,
   }) => exchange.createOrder(symbol, 'limit', side, amount, price)
@@ -263,6 +271,7 @@ module.exports = () => credentials => {
     watchLivePrices,
     getLivePrices,
     getOpenOrders,
+    createOCOLimitOrder,
     createLimitOrder,
     createStopOrder,
     removeOrder,
