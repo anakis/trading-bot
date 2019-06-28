@@ -5,7 +5,7 @@ const sleep = require('sleep-promise')
 module.exports = app => {
   const checkOrder = async ({ order, orders, checks }) => {
     await sleep(10000)
-    if (checks === 7) {
+    if (checks === 5) {
       console.log(`${order.id} order cancelled by timeout`)
       return this.removeOrder(order.id)
     }
