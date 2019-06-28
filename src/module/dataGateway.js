@@ -74,21 +74,20 @@ module.exports = async app => {
     symbol, side, amount, price, stopOrder = undefined,
   }) => {
     if (stopOrder) {
-      this.exchange.createOCOLimitOrder({
+      return this.exchange.createOCOLimitOrder({
         symbol,
         side,
         amount,
         price,
         stopLoss: stopOrder.price,
       })
-    } else {
-      this.exchange.createLimitOrder({
-        symbol,
-        side,
-        amount,
-        price,
-      })
     }
+    return this.exchange.createLimitOrder({
+      symbol,
+      side,
+      amount,
+      price,
+    })
   }
 
   const createStopLoss = async ({
