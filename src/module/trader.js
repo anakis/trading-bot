@@ -9,7 +9,7 @@ module.exports = async app => {
 
   const trade = async opportunities => {
     const orders = await this.getOpenOrders()
-    return Promise.all(
+    const trades = await Promise.all(
       _.map(opportunities, async (opportunitie, symbol) => {
         const {
           amount, price, action, stopLoss,
@@ -40,7 +40,11 @@ module.exports = async app => {
             })
           }
 
-          console.log(`${order.id} [${side}] limit order on ${symbol}. Price: ${price}, stop loss: ${stopLoss}`)
+          console.log(
+            `${
+              order.id
+            } [${side}] limit order on ${symbol}. Price: ${price}, stop loss: ${stopLoss}`,
+          )
           return { ...order, stopLoss }
         } catch (e) {
           console.log(e.message)
@@ -48,6 +52,8 @@ module.exports = async app => {
         }
       }),
     )
+
+    return _.pickBy(trades, ({ id }) => id !== undefined)
   }
 
   const init = async () => {
