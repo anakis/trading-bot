@@ -9,14 +9,14 @@ module.exports = async app => {
       const orderBySymbol = orders[position.symbol]
       if (!orderBySymbol || orderBySymbol.find(o => o.type === 'stop')) {
         const {
-          symbol, amount, stopLoss, price, action,
-        } = orderBySymbol
+          symbol, amount, stopLoss, price, type,
+        } = position
         this.savePosition({
           symbol,
           amount,
           price,
           stopLoss,
-          type: action,
+          type,
         })
       }
     })
@@ -24,9 +24,10 @@ module.exports = async app => {
 
   const init = async () => {
     const { getOpenOrders } = await app.module.dataGateway
-    const { getOpenPositions } = app.module.positionManager
+    const { getOpenPositions, savePosition } = app.module.positionManager
     this.getOpenPositions = getOpenPositions
     this.getOpenOrders = getOpenOrders
+    this.savePosition = savePosition
   }
 
   await init()
