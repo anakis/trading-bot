@@ -5,21 +5,23 @@ module.exports = async app => {
     const positions = await this.getOpenPositions()
     const orders = await this.getOpenOrders()
 
-    _.map(positions, position => {
-      const orderBySymbol = orders[position.symbol]
-      if (!orderBySymbol || orderBySymbol.find(o => o.type === 'stop')) {
-        const {
-          symbol, amount, stopLoss, price, type,
-        } = position
-        this.savePosition({
-          symbol,
-          amount,
-          price,
-          stopLoss,
-          type,
-        })
-      }
-    })
+    await Promise.all(
+      _.map(positions, position => {
+        const orderBySymbol = orders[position.symbol]
+        if (!orderBySymbol || orderBySymbol.find(o => o.type === 'stop')) {
+          const {
+            symbol, amount, stopLoss, price, type,
+          } = position
+          return this.savePosition({
+            symbol,
+            amount,
+            price,
+            stopLoss,
+            type,
+          })
+        }
+      }),
+    )
   }
 
   const init = async () => {

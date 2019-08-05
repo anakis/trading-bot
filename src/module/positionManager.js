@@ -26,14 +26,14 @@ module.exports = app => {
     return KELLY_CRITERIETION_DEFAULT
   }
 
-  const getOpenPositions = async () => {
+  const getOpenPositions = () => {
     const { Position } = app.models
-    return Position.find({ status: 'open' })
+    return Position.find({ status: 'open' }).exec()
   }
 
   const getProfits = async symbol => {
     const { Profit } = app.models
-    const profits = await Profit.find({ symbol })
+    const profits = await Profit.find({ symbol }).exec()
     return profits.map(({ value }) => value)
   }
 
@@ -45,14 +45,14 @@ module.exports = app => {
     const { QUOTE: quote } = app.config.constants
 
     positionSize = await Promise.all(
-      _.mapValues(opportunities, async (opportunitie, index) => {
+      _.map(opportunities, async (opportunitie, symbol) => {
         const {
           tradeRisk, price, action, stopLoss,
         } = opportunitie
 
         const { RISK_COEFFICIENT: accountRisk } = app.config.constants
 
-        const profits = await getProfits(index)
+        const profits = await getProfits(symbol)
 
         const kellyCriterietion = calculateKellyCriterietion(profits)
 
@@ -60,7 +60,7 @@ module.exports = app => {
 
         let amount = 0
         let feeCoefficient = 1
-        if (!hasOpenPosition(index, openPositions)) {
+        if (!hasOpenPosition(symbol, openPositions)) {
           const riskPosition = calculateRiskPosition({
             tradeRisk,
             accountRisk,
@@ -68,7 +68,7 @@ module.exports = app => {
             openedPositionSize: _.size(openPositions),
           })
 
-          const pair = pairs.find(p => p.symbol === index)
+          const pair = pairs.find(p => p.symbol === symbol)
 
           const minAmount = pair.limits.amount.min
 
@@ -86,18 +86,16 @@ module.exports = app => {
           amount,
           amountWithoutFee: amount / feeCoefficient,
           stopLoss,
+          symbol,
         }
       }),
     )
-
-    return _.pickBy(positionSize, ({ amount }) => amount !== 0)
+    return _.pickBy(_.keyBy(positionSize, 'symbol'), ({ amount }) => amount !== 0)
   }
 
   const closePosition = id => {
     const { Position } = app.models
-    return new Promise(resolve => {
-      Position.findByIdAndUpdate(id, { status: 'closed' }, resolve())
-    })
+    return Position.findByIdAndUpdate(id, { status: 'closed' }).exec()
   }
 
   const createPosition = ({
