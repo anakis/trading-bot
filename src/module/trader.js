@@ -45,7 +45,7 @@ module.exports = async app => {
               order.id
             } [${side}] limit order on ${symbol}. Price: ${price}, stop loss: ${stopLoss}`,
           )
-          return { ...order, stopLoss }
+          return { ...order, stopLoss, action }
         } catch (e) {
           console.log(e.message)
           return {}

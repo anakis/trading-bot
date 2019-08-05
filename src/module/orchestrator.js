@@ -10,21 +10,14 @@ module.exports = async app => {
   const run = async () => {
     const server = new Express()
 
-    const signals = []
     server.get('/', (req, res) => {
-      res.json(signals)
+      res.send('Trading bot is running!')
     })
-
-    const oppenedOrders = {}
 
     const start = async () => {
       this.prices = this.getLivePrices() // get prices array
       // const orders = await this.getOpenOrders()
-      const lastPrices = _.mapValues(this.prices, price => price[price.length - 1])
-      const losses = this.getLosses(oppenedOrders, lastPrices) // get losses
-      if (_.size(losses) !== 0) {
-        await this.trade(losses)
-      }
+      await this.manageLosses() // get losses
       const analyse = this.getAnalyse(this.prices) // get analyse of each pair
       if (_.size(analyse) !== 0) {
         const risk = this.getRisk(analyse) // get risk of a analyse
@@ -32,14 +25,15 @@ module.exports = async app => {
         const { pairs } = this
         const opportunities = this.getOpportunities({ risk, balance, pairs })
         if (_.size(opportunities) !== 0) {
-          const opportunitiesWithPositionSize = this.calcPositionSize({
+          const opportunitiesWithPositionSize = await this.calcPositionSize({
             opportunities,
             balance,
             pairs,
-            oppenedPositions: {},
           })
-          const newOrders = await this.trade(opportunitiesWithPositionSize)
-          this.checkOrders(newOrders)
+          if (_.size(opportunitiesWithPositionSize) !== 0) {
+            const newOrders = await this.trade(opportunitiesWithPositionSize)
+            this.checkOrders(newOrders)
+          }
         }
       }
     }
@@ -57,14 +51,14 @@ module.exports = async app => {
     const { getRisk } = app.module.riskManager
     const { checkOrders } = app.module.ordersMonitor
     const { getOpportunities } = app.module.opportunitiesMonitor
-    const { getLosses } = app.module.stopLossMonitor
+    const { manageLosses } = app.module.stopLossMonitor
     const { calcPositionSize } = app.module.positionManager
     const { trade } = await app.module.trader
     this.getLivePrices = getLivePrices
     this.getAnalyse = getAnalyse
     this.getRisk = getRisk
     this.getOpportunities = getOpportunities
-    this.getLosses = getLosses
+    this.manageLosses = manageLosses
     this.loadBalance = loadBalance
     this.calcPositionSize = calcPositionSize
     this.trade = trade
