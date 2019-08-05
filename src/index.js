@@ -1,3 +1,9 @@
 const app = require('./config/app')()
 
-app.module.orchestrator.run()
+const init = async () => {
+  const { run } = await app.module.orchestrator
+
+  run()
+}
+
+init()

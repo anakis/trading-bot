@@ -26,59 +26,129 @@ module.exports = app => {
     return KELLY_CRITERIETION_DEFAULT
   }
 
-  const filterOpportunities = ({ opportunities, balance, pairs }) => _.pickBy(opportunities, ({ action }, index) => {
-    if (action === 'SHORT') {
-      const pair = pairs.find(p => p.symbol === index)
-      return balance[pair.base] && balance[pair.base] >= pair.limits.amount.min
-    }
-    return true
-  })
-
-  const calcPositionSize = async (opportunities, oppenedPositions, profits = {}) => {
-    let positionSize = {}
-    const { loadBalance, getPairs } = await app.module.dataGateway
-    const { QUOTE: quote } = app.config.constants
-    const balance = await loadBalance()
-    const pairs = getPairs()
-
-    const realOpportunities = filterOpportunities({ opportunities, balance, pairs })
-
-    positionSize = _.mapValues(realOpportunities, (opportunitie, index) => {
-      const {
-        tradeRisk, price, action, stopLoss,
-      } = opportunitie
-
-      const { RISK_COEFFICIENT: accountRisk } = app.config.constants
-
-      const kellyCriterietion = calculateKellyCriterietion(profits[index])
-
-      const riskPosition = calculateRiskPosition({
-        tradeRisk,
-        accountRisk,
-        pairsSize: pairs.length,
-        openedPositionSize: _.size(oppenedPositions),
-      })
-
-      const minAmount = pairs.find(pair => pair.symbol === index).limits.amount.min
-
-      const amount = Math.max(
-        minAmount,
-        (balance[quote] * Math.min(riskPosition, kellyCriterietion)) / price,
-      )
-
-      return {
-        price,
-        action,
-        amount,
-        stopLoss,
-      }
-    })
-
-    return positionSize
+  const getOpenPositions = async () => {
+    const { Position } = app.models
+    return Position.find({ status: 'open' })
   }
 
+  const getProfits = async symbol => {
+    const { Profit } = app.models
+    const profits = await Profit.find({ symbol })
+    return profits.map(({ value }) => value)
+  }
 
+  const hasOpenPosition = (index, positions) => positions.findIndex(({ symbol }) => symbol === index) !== -1
+
+  const calcPositionSize = async ({ opportunities, balance, pairs }) => {
+    let positionSize = {}
+
+    const { QUOTE: quote } = app.config.constants
+
+    positionSize = await Promise.all(
+      _.mapValues(opportunities, async (opportunitie, index) => {
+        const {
+          tradeRisk, price, action, stopLoss,
+        } = opportunitie
+
+        const { RISK_COEFFICIENT: accountRisk } = app.config.constants
+
+        const profits = await getProfits(index)
+
+        const kellyCriterietion = calculateKellyCriterietion(profits)
+
+        const openPositions = await getOpenPositions()
+
+        let amount = 0
+        let feeCoefficient = 1
+        if (!hasOpenPosition(index, openPositions)) {
+          const riskPosition = calculateRiskPosition({
+            tradeRisk,
+            accountRisk,
+            pairsSize: pairs.length,
+            openedPositionSize: _.size(openPositions),
+          })
+
+          const pair = pairs.find(p => p.symbol === index)
+
+          const minAmount = pair.limits.amount.min
+
+          amount = Math.max(
+            minAmount,
+            (balance[quote] * Math.min(riskPosition, kellyCriterietion)) / price,
+          )
+          if (action === 'LONG') feeCoefficient += 0.002 / (1 - 0.002)
+
+          amount *= feeCoefficient
+        }
+        return {
+          price,
+          action,
+          amount,
+          amountWithoutFee: amount / feeCoefficient,
+          stopLoss,
+        }
+      }),
+    )
+
+    return _.pickBy(positionSize, ({ amount }) => amount !== 0)
+  }
+
+  const closePosition = id => {
+    const { Position } = app.models
+    return new Promise(resolve => {
+      Position.findByIdAndUpdate(id, { status: 'closed' }, resolve())
+    })
+  }
+
+  const createPosition = ({
+    symbol, amount, price, stopLoss, type,
+  }) => {
+    const { Position } = app.models
+    const position = new Position({
+      symbol,
+      amount,
+      price,
+      stopLoss,
+      type,
+    })
+    position.save()
+  }
+
+  const calculateProfit = (oppenedPosition, newPosition) => {
+    const { Profit } = app.models
+    const profit = new Profit({
+      symbol: newPosition.symbol,
+      value: newPosition.price - oppenedPosition.price,
+    })
+    profit.save()
+  }
+
+  const savePosition = async ({
+    symbol, amount, price, stopLoss, type,
+  }) => {
+    const position = {
+      symbol,
+      amount,
+      price,
+      stopLoss,
+      type,
+    }
+    const { Position } = app.models
+    const oppenedPosition = await Position.findOne({
+      symbol,
+      type: type === 'LONG' ? 'SHORT' : 'LONG',
+      status: 'open',
+    })
+
+    if (oppenedPosition && oppenedPosition.id) {
+      calculateProfit(oppenedPosition, position)
+      closePosition(oppenedPosition.id)
+    }
+    createPosition(position)
+  }
   return {
     calcPositionSize,
+    savePosition,
+    getOpenPositions,
   }
 }

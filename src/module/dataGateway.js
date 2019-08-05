@@ -47,7 +47,19 @@ module.exports = async app => {
     }
   })
 
-  const getLivePrices = () => getSanitizedLivePrice(this.exchange.getLivePrices())
+  const hasInvalidNumbers = list => list.includes(NaN) || list.includes(undefined)
+
+  const getLivePrices = () => {
+    const livePrices = getSanitizedLivePrice(this.exchange.getLivePrices())
+    this.prices = _.mapValues(this.prices, (price, index) => {
+      // if got undefined from livePrices, don't update prices list
+      if (!hasInvalidNumbers(livePrices[index].ohlcv)) {
+        return [...price, livePrices[index]]
+      }
+      return [...price]
+    })
+    return this.prices
+  }
 
   const loadBalance = async () => {
     const balance = await this.exchange.loadAccountBalance()
@@ -59,13 +71,46 @@ module.exports = async app => {
   const getPair = key => this.pairs.find(({ symbol }) => symbol === key)
 
   const createOrder = async ({
-    symbol, side, amount, price,
-  }) => this.exchange.createOrder({
+    symbol, side, amount, price, stopOrder = undefined,
+  }) => {
+    if (stopOrder) {
+      return this.exchange.createOCOLimitOrder({
+        symbol,
+        side,
+        amount,
+        price,
+        stopLoss: stopOrder.price,
+      })
+    }
+    return this.exchange.createLimitOrder({
+      symbol,
+      side,
+      amount,
+      price,
+    })
+  }
+
+  const createStopLoss = async ({
+    symbol, amount, side, price,
+  }) => this.exchange.createStopOrder({
     symbol,
-    side,
+    side: side === 'sell' ? 'buy' : 'sell',
     amount,
     price,
   })
+
+  const getOpenOrders = async () => {
+    const orders = await this.exchange.getOpenOrders()
+    return _.groupBy(orders, 'symbol', 'type')
+  }
+
+  const removeOrder = async id => {
+    try {
+      return this.exchange.removeOrder(id)
+    } catch (e) {
+      return removeOrder(id)
+    }
+  }
 
   const init = async () => {
     const exchange = await startExchange()
@@ -78,17 +123,21 @@ module.exports = async app => {
 
     this.pairs = pairs
 
+    this.prices = await getPrices()
+
     return this
   }
 
   await init()
 
   return {
-    getPrices,
     getPairs,
     getPair,
     loadBalance,
     getLivePrices,
     createOrder,
+    createStopLoss,
+    getOpenOrders,
+    removeOrder,
   }
 }
