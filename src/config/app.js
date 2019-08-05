@@ -5,6 +5,7 @@ const app = {}
 consign({ cwd: 'src' })
   .include('config/constants.js')
   .then('libs')
+  .then('models')
   .then('module/dataGateway.js')
   .then('module/analyser.js')
   .then('module/riskManager.js')
