@@ -51,7 +51,7 @@ module.exports = async app => {
     const { getRisk } = app.module.riskManager
     const { checkOrders } = app.module.ordersMonitor
     const { getOpportunities } = app.module.opportunitiesMonitor
-    const { manageLosses } = app.module.stopLossMonitor
+    const { manageLosses } = await app.module.stopLossMonitor
     const { calcPositionSize } = app.module.positionManager
     const { trade } = await app.module.trader
     this.getLivePrices = getLivePrices
