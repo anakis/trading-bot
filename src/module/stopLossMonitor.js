@@ -17,9 +17,10 @@ module.exports = async app => {
             amount,
             price,
             stopLoss,
-            type,
+            type: type === 'LONG' ? 'SHORT' : 'LONG',
           })
         }
+        return position
       }),
     )
   }
